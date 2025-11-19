@@ -1,1 +1,12 @@
+/* Shared styles already included in each HTML file */
+/* This file can be used for future additions */
 
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+}
