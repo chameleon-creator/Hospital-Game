@@ -1,1 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appendix Removal Surgery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #f5576c;
+            font-size: 2em;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .stat {
+            font-weight: bold;
+        }
+
+        #game-canvas {
+            border: 3px solid #f5576c;
+            border-radius: 15px;
+            display: block;
+            margin: 0 auto;
+            cursor: crosshair;
+            background: #ffe0e6;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            background: #f5576c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        button:hover {
+            background: #e04555;
+            transform: scale(1.05);
+        }
+
+        .back-btn {
+            background: #666;
+        }
+
+        .back-btn:hover {
+            background: #555;
+        }
+
+        .instructions {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .game-over h2 {
+            color: #f5576c;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .final-score {
+            font-size: 3em;
+            color: #4caf50;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>💉 Appendix Removal</h1>
+            <div class="stats">
+                <div>⏱️ Time: <span class="stat" id="timer">60</span>s</div>
+                <div>⭐ Score: <span class="stat" id="score">0</span></div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            Click on the infected organs (red) to remove them! Avoid clicking healthy organs (pink). Remove all infected organs before time runs out!
+        </div>
+
+        <canvas id="game-canvas" width="740" height="500"></canvas>
+
+        <div class="controls">
+            <button onclick="window.location.href='index.html'" class="back-btn">🏠 Main Menu</button>
+            <button onclick="restartGame()">🔄 Restart</button>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 id="resultTitle">Surgery Complete!</h2>
+            <div class="final-score" id="finalScore">0</div>
+            <p id="resultMessage"></p>
+            <div class="controls">
+                <button onclick="window.location.href='index.html'" class="back-btn">Main Menu</button>
+                <button onclick="restartGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let score = 0;
+        let timeLeft = 60;
+        let gameRunning = true;
+        let organs = [];
+        let infectedCount = 0;
+
+        class Organ {
+            constructor(x, y, infected) {
+                this.x = x;
+                this.y = y;
+                this.radius = 30;
+                this.infected = infected;
+                this.clicked = false;
+                this.wobble = 0;
+            }
+
+            draw() {
+                if (this.clicked) return;
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                // Wobble effect
+                this.wobble += 0.1;
+                ctx.rotate(Math.sin(this.wobble) * 0.1);
+
+                // Draw organ
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.infected ? '#ff4444' : '#ffb3c1';
+                ctx.fill();
+                ctx.strokeStyle = this.infected ? '#cc0000' : '#ff8fa3';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Draw details
+                if (this.infected) {
+                    ctx.fillStyle = '#cc0000';
+                    ctx.fillText('☠️', -10, 10);
+                } else {
+                    ctx.fillStyle = '#ff8fa3';
+                    ctx.font = '20px Arial';
+                    ctx.fillText('❤️', -10, 10);
+                }
+
+                ctx.restore();
+            }
+
+            contains(mx, my) {
+                const dx = mx - this.x;
+                const dy = my - this.y;
+                return dx * dx + dy * dy <= this.radius * this.radius;
+            }
+        }
+
+        function initGame() {
+            organs = [];
+            infectedCount = 0;
+            
+            // Create organs in a grid pattern
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 3; j++) {
+                    const x = 100 + i * 140;
+                    const y = 100 + j * 140;
+                    const infected = Math.random() < 0.4; // 40% chance infected
+                    organs.push(new Organ(x, y, infected));
+                    if (infected) infectedCount++;
+                }
+            }
+        }
+
+        function drawBackground() {
+            // Draw operating table
+            ctx.fillStyle = '#d4e6f1';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Grid lines
+            ctx.strokeStyle = '#aed6f1';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvas.width; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvas.height; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvas.width, i);
+                ctx.stroke();
+            }
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            
+            organs.forEach(organ => organ.draw());
+
+            // Check win condition
+            const remainingInfected = organs.filter(o => o.infected && !o.clicked).length;
+            if (remainingInfected === 0 && infectedCount > 0) {
+                endGame(true);
+            }
+        }
+
+        function updateTimer() {
+            if (!gameRunning) return;
+            
+            timeLeft--;
+            document.getElementById('timer').textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                endGame(false);
+            }
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if (!gameRunning) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            organs.forEach(organ => {
+                if (organ.contains(x, y) && !organ.clicked) {
+                    organ.clicked = true;
+                    
+                    if (organ.infected) {
+                        score += 100;
+                        playSound('success');
+                    } else {
+                        score -= 50;
+                        playSound('error');
+                    }
+                    
+                    document.getElementById('score').textContent = score;
+                }
+            });
+        });
+
+        function playSound(type) {
+            // Simple audio feedback using Web Audio API
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'success') {
+                oscillator.frequency.value = 800;
+            } else {
+                oscillator.frequency.value = 200;
+            }
+            
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function endGame(won) {
+            gameRunning = false;
+            
+            const gameOverDiv = document.getElementById('gameOver');
+            const resultTitle = document.getElementById('resultTitle');
+            const finalScore = document.getElementById('finalScore');
+            const resultMessage = document.getElementById('resultMessage');
+            
+            if (won) {
+                resultTitle.textContent = '✅ Surgery Successful!';
+                resultMessage.textContent = 'You removed all infected organs!';
+                score += timeLeft * 10; // Bonus for remaining time
+            } else {
+                resultTitle.textContent = '⏰ Time\'s Up!';
+                resultMessage.textContent = 'You ran out of time!';
+            }
+            
+            finalScore.textContent = score;
+            
+            // Save high score
+            const currentHighScore = localStorage.getItem('game1Score') || 0;
+            if (score > currentHighScore) {
+                localStorage.setItem('game1Score', score);
+            }
+            
+            gameOverDiv.style.display = 'flex';
+        }
+
+        function restartGame() {
+            score = 0;
+            timeLeft = 60;
+            gameRunning = true;
+            document.getElementById('score').textContent = score;
+            document.getElementById('timer').textContent = timeLeft;
+            document.getElementById('gameOver').style.display = 'none';
+            initGame();
+        }
+
+        // Initialize
+        initGame();
+        setInterval(update, 1000 / 60); // 60 FPS
+        setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>
