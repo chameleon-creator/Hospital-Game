@@ -1,5 +1,6 @@
-/* Shared styles already included in each HTML file */
-/* This file can be used for future additions */
+/* ========================================
+   SHARED STYLES FOR ALL GAMES
+   ======================================== */
 
 * {
     margin: 0;
@@ -9,4 +10,115 @@
 
 body {
     font-family: 'Arial', sans-serif;
+}
+
+/* Shared Button Styles */
+button {
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    color: white;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+.back-btn {
+    background: #666;
+}
+
+.back-btn:hover {
+    background: #555;
+}
+
+/* Shared Game Container */
+.game-container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    max-width: 800px;
+    width: 100%;
+    padding: 30px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.stats {
+    display: flex;
+    gap: 20px;
+    font-size: 1.2em;
+    color: #666;
+}
+
+.stat {
+    font-weight: bold;
+}
+
+/* Shared Instructions Box */
+.instructions {
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Shared Controls */
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+/* Shared Game Over Modal */
+.game-over {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.game-over-content {
+    background: white;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 400px;
+}
+
+.final-score {
+    font-size: 3em;
+    color: #4caf50;
+    margin: 20px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .game-container {
+        padding: 20px;
+    }
+    
+    h1 {
+        font-size: 1.5em !important;
+    }
+    
+    .stats {
+        flex-direction: column;
+        gap: 10px;
+    }
 }
