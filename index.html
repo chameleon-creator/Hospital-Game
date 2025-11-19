@@ -57,7 +57,155 @@
             padding: 30px;
             cursor: pointer;
             transition: transform 0.3s, box-shadow 0.3s;
-            color: white;   ← ADDED SEMICOLON
+            color: white;
             text-decoration: none;
             display: block;
         }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .game-card.game1 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .game-card.game2 {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .game-card.game3 {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+
+        .game-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .game-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .game-description {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .high-scores {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        .high-scores h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .score-item:last-child {
+            border-bottom: none;
+        }
+
+        .footer {
+            margin-top: 30px;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 Hospital Surgery Games</h1>
+        <p class="subtitle">Choose your surgical challenge!</p>
+
+        <div class="games-grid">
+            <a href="game1.html" class="game-card game1">
+                <div class="game-icon">💉</div>
+                <div class="game-title">Appendix Removal</div>
+                <div class="game-description">Carefully remove the appendix before time runs out!</div>
+            </a>
+
+            <a href="game2.html" class="game-card game2">
+                <div class="game-icon">🪡</div>
+                <div class="game-title">Wound Stitching</div>
+                <div class="game-description">Stitch the wound with precision and speed!</div>
+            </a>
+
+            <a href="game3.html" class="game-card game3">
+                <div class="game-icon">❤️</div>
+                <div class="game-title">Heart Rhythm</div>
+                <div class="game-description">Match the heartbeat rhythm to save the patient!</div>
+            </a>
+        </div>
+
+        <div class="high-scores">
+            <h2>🏆 High Scores</h2>
+            <div id="scores-container">
+                <div class="score-item">
+                    <span>Appendix Removal</span>
+                    <span id="score1">0 pts</span>
+                </div>
+                <div class="score-item">
+                    <span>Wound Stitching</span>
+                    <span id="score2">0 pts</span>
+                </div>
+                <div class="score-item">
+                    <span>Heart Rhythm</span>
+                    <span id="score3">0 pts</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🎮 Created for Computer Engineering Project</p>
+            <p>Click any game to start playing!</p>
+        </div>
+    </div>
+
+    <script>
+        // Load high scores from localStorage
+        function loadScores() {
+            const scores = {
+                game1: localStorage.getItem('game1Score') || 0,
+                game2: localStorage.getItem('game2Score') || 0,
+                game3: localStorage.getItem('game3Score') || 0
+            };
+
+            document.getElementById('score1').textContent = scores.game1 + ' pts';
+            document.getElementById('score2').textContent = scores.game2 + ' pts';
+            document.getElementById('score3').textContent = scores.game3 + ' pts';
+        }
+
+        loadScores();
+
+        // Refresh scores when page becomes visible
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                loadScores();
+            }
+        });
+    </script>
+</body>
+</html>
