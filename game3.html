@@ -1,1 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Rhythm Surgery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #38f9d7;
+            font-size: 2em;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .stat {
+            font-weight: bold;
+        }
+
+        #game-canvas {
+            border: 3px solid #38f9d7;
+            border-radius: 15px;
+            display: block;
+            margin: 0 auto;
+            background: #1a1a1a;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            background: #38f9d7;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        button:hover {
+            background: #2ed9c3;
+            transform: scale(1.05);
+        }
+
+        .back-btn {
+            background: #666;
+        }
+
+        .back-btn:hover {
+            background: #555;
+        }
+
+        .instructions {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .game-over h2 {
+            color: #38f9d7;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .final-score {
+            font-size: 3em;
+            color: #4caf50;
+            margin: 20px 0;
+        }
+
+        .key-hints {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .key {
+            background: #38f9d7;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .combo-meter {
+            background: #e0e0e0;
+            height: 25px;
+            border-radius: 12px;
+            margin: 10px 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .combo-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #4caf50 100%);
+            width: 0%;
+            transition: width 0.2s;
+        }
+
+        .combo-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>❤️ Heart Rhythm</h1>
+            <div class="stats">
+                <div>💗 Health: <span class="stat" id="health">100</span>%</div>
+                <div>⭐ Score: <span class="stat" id="score">0</span></div>
+                <div>🔥 Combo: <span class="stat" id="combo">0</span></div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            Press the correct key when the beats reach the target line! Match the rhythm to stabilize the heart!
+        </div>
+
+        <div class="key-hints">
+            <div class="key">A</div>
+            <div class="key">S</div>
+            <div class="key">D</div>
+            <div class="key">F</div>
+        </div>
+
+        <div class="combo-meter">
+            <div class="combo-fill" id="comboBar"></div>
+            <div class="combo-text" id="comboText">Perfect Timing!</div>
+        </div>
+
+        <canvas id="game-canvas" width="740" height="400"></canvas>
+
+        <div class="controls">
+            <button onclick="window.location.href='index.html'" class="back-btn">🏠 Main Menu</button>
+            <button onclick="restartGame()">🔄 Restart</button>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 id="resultTitle">Surgery Complete!</h2>
+            <div class="final-score" id="finalScore">0</div>
+            <p id="resultMessage"></p>
+            <div class="controls">
+                <button onclick="window.location.href='index.html'" class="back-btn">Main Menu</button>
+                <button onclick="restartGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let score = 0;
+        let health = 100;
+        let combo = 0;
+        let gameRunning = true;
+        let beats = [];
+        let targetLine = 100;
+        let beatSpeed = 2;
+        let lastBeatTime = 0;
+        let beatInterval = 800; // milliseconds
+        
+        const keys = ['A', 'S', 'D', 'F'];
+        const lanes = [150, 250, 350, 450];
+        const colors = ['#ff4444', '#44ff44', '#4444ff', '#ffff44'];
+
+        class Beat {
+            constructor(lane, key) {
+                this.lane = lane;
+                this.key = key;
+                this.x = canvas.width;
+                this.y = lane;
+                this.radius = 20;
+                this.hit = false;
+                this.missed = false;
+            }
+
+            update() {
+                this.x -= beatSpeed;
+                
+                if (this.x < -50 && !this.hit && !this.missed) {
+                    this.missed = true;
+                    health -= 10;
+                    combo = 0;
+                    document.getElementById('health').textContent = Math.max(0, health);
+                    document.getElementById('combo').textContent = combo;
+                    updateComboBar(0);
+                    
+                    if (health <= 0) {
+                        endGame(false);
+                    }
+                }
+            }
+
+            draw() {
+                if (this.hit || this.missed) return;
+
+                const colorIndex = keys.indexOf(this.key);
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = colors[colorIndex];
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 20px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.key, this.x, this.y);
+            }
+
+            checkHit(key) {
+                if (this.hit || this.missed) return false;
+                if (this.key !== key) return false;
+
+                const distance = Math.abs(this.x - targetLine);
+                
+                if (distance < 30) {
+                    this.hit = true;
+                    const accuracy = Math.max(0, 100 - distance * 3);
+                    const points = Math.floor(accuracy * (1 + combo * 0.1));
+                    score += points;
+                    combo++;
+                    
+                    document.getElementById('score').textContent = score;
+                    document.getElementById('combo').textContent = combo;
+                    updateComboBar(accuracy);
+                    
+                    playSound(accuracy > 80 ? 'perfect' : 'good');
+                    return true;
+                } else if (distance < 60) {
+                    this.hit = true;
+                    score += 10;
+                    combo = 0;
+                    document.getElementById('score').textContent = score;
+                    document.getElementById('combo').textContent = combo;
+                    updateComboBar(30);
+                    playSound('ok');
+                    return true;
+                }
+                
+                return false;
+            }
+        }
+
+        function updateComboBar(accuracy) {
+            const comboBar = document.getElementById('comboBar');
+            const comboText = document.getElementById('comboText');
+            
+            comboBar.style.width = Math.min(combo * 10, 100) + '%';
+            
+            if (accuracy > 90) {
+                comboText.textContent = '🎯 PERFECT!';
+            } else if (accuracy > 70) {
+                comboText.textContent = '👍 GREAT!';
+            } else if (accuracy > 50) {
+                comboText.textContent = '👌 GOOD';
+            } else {
+                comboText.textContent = 'Keep trying!';
+            }
+        }
+
+        function spawnBeat() {
+            const lane = lanes[Math.floor(Math.random() * lanes.length)];
+            const key = keys[lanes.indexOf(lane)];
+            beats.push(new Beat(lane, key));
+        }
+
+        function drawTargetLine() {
+            ctx.strokeStyle = '#00ff00';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.moveTo(targetLine, 0);
+            ctx.lineTo(targetLine, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw target circles
+            lanes.forEach((lane, i) => {
+                ctx.beginPath();
+                ctx.arc(targetLine, lane, 25, 0, Math.PI * 2);
+                ctx.strokeStyle = colors[i];
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            });
+        }
+
+        function drawHeartbeat() {
+            // Draw ECG-style heartbeat line
+            ctx.strokeStyle = '#00ff66';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let x = 0; x < canvas.width; x += 5) {
+                const y = 50 + Math.sin((x + Date.now() * 0.1) / 20) * 10;
+                if (x === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawHeartbeat();
+            drawTargetLine();
+            
+            // Spawn beats
+            const now = Date.now();
+            if (now - lastBeatTime > beatInterval) {
+                spawnBeat();
+                lastBeatTime = now;
+                beatInterval = Math.max(500, beatInterval - 2); // Gradually speed up
+            }
+            
+            // Update and draw beats
+            beats = beats.filter(beat => !beat.missed || beat.x > -50);
+            beats.forEach(beat => {
+                beat.update();
+                beat.draw();
+            });
+
+            // Draw lane labels
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'left';
+            lanes.forEach((lane, i) => {
+                ctx.fillText(keys[i], 10, lane + 5);
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+            
+            const key = e.key.toUpperCase();
+            if (!keys.includes(key)) return;
+
+            let hitAny = false;
+            beats.forEach(beat => {
+                if (beat.checkHit(key)) {
+                    hitAny = true;
+                }
+            });
+
+            if (!hitAny) {
+                combo = Math.max(0, combo - 1);
+                score = Math.max(0, score - 5);
+                document.getElementById('combo').textContent = combo;
+                document.getElementById('score').textContent = score;
+            }
+        });
+
+        function playSound(type) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'perfect') {
+                oscillator.frequency.value = 800;
+            } else if (type === 'good') {
+                oscillator.frequency.value = 600;
+            } else {
+                oscillator.frequency.value = 400;
+            }
+            
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.15);
+        }
+
+        function endGame(won) {
+            gameRunning = false;
+            
+            const gameOverDiv = document.getElementById('gameOver');
+            const resultTitle = document.getElementById('resultTitle');
+            const finalScore = document.getElementById('finalScore');
+            const resultMessage = document.getElementById('resultMessage');
+            
+            if (won) {
+                resultTitle.textContent = '✅ Heart Stabilized!';
+                resultMessage.textContent = `Perfect rhythm! Max combo: ${combo}`;
+            } else {
+                resultTitle.textContent = '💔 Patient Lost!';
+                resultMessage.textContent = 'The heart failed... Try again!';
+            }
+            
+            finalScore.textContent = score;
+            
+            const currentHighScore = localStorage.getItem('game3Score') || 0;
+            if (score > currentHighScore) {
+                localStorage.setItem('game3Score', score);
+            }
+            
+            gameOverDiv.style.display = 'flex';
+        }
+
+        function restartGame() {
+            score = 0;
+            health = 100;
+            combo = 0;
+            beats = [];
+            beatSpeed = 2;
+            beatInterval = 800;
+            lastBeatTime = Date.now();
+            gameRunning = true;
+            
+            document.getElementById('score').textContent = score;
+            document.getElementById('health').textContent = health;
+            document.getElementById('combo').textContent = combo;
+            document.getElementById('comboBar').style.width = '0%';
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        setInterval(update, 1000 / 60);
+    </script>
+</body>
+</html>
