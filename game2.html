@@ -1,1 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wound Stitching Surgery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #00f2fe;
+            font-size: 2em;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .stat {
+            font-weight: bold;
+        }
+
+        #game-canvas {
+            border: 3px solid #00f2fe;
+            border-radius: 15px;
+            display: block;
+            margin: 0 auto;
+            cursor: crosshair;
+            background: #e8f5ff;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        button {
+            background: #00f2fe;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        button:hover {
+            background: #00d9e6;
+            transform: scale(1.05);
+        }
+
+        .back-btn {
+            background: #666;
+        }
+
+        .back-btn:hover {
+            background: #555;
+        }
+
+        .instructions {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .game-over h2 {
+            color: #00f2fe;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .final-score {
+            font-size: 3em;
+            color: #4caf50;
+            margin: 20px 0;
+        }
+
+        .accuracy-bar {
+            background: #e0e0e0;
+            height: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .accuracy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444 0%, #ffaa00 50%, #4caf50 100%);
+            width: 100%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🪡 Wound Stitching</h1>
+            <div class="stats">
+                <div>⏱️ Time: <span class="stat" id="timer">90</span>s</div>
+                <div>⭐ Score: <span class="stat" id="score">0</span></div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            Click along the wound line to stitch it closed! Follow the red line accurately and quickly. Higher accuracy = more points!
+        </div>
+
+        <div>
+            Accuracy: <span id="accuracy">100</span>%
+            <div class="accuracy-bar">
+                <div class="accuracy-fill" id="accuracyBar"></div>
+            </div>
+        </div>
+
+        <canvas id="game-canvas" width="740" height="500"></canvas>
+
+        <div class="controls">
+            <button onclick="window.location.href='index.html'" class="back-btn">🏠 Main Menu</button>
+            <button onclick="restartGame()">🔄 Restart</button>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 id="resultTitle">Surgery Complete!</h2>
+            <div class="final-score" id="finalScore">0</div>
+            <p id="resultMessage"></p>
+            <div class="controls">
+                <button onclick="window.location.href='index.html'" class="back-btn">Main Menu</button>
+                <button onclick="restartGame()">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let score = 0;
+        let timeLeft = 90;
+        let gameRunning = true;
+        let woundPath = [];
+        let stitchPoints = [];
+        let currentStitch = 0;
+        let totalAccuracy = 100;
+        let clickCount = 0;
+
+        class StitchPoint {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 15;
+                this.completed = false;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                
+                if (this.completed) {
+                    ctx.fillStyle = '#4caf50';
+                    ctx.fill();
+                    ctx.strokeStyle = '#2e7d32';
+                } else if (stitchPoints.indexOf(this) === currentStitch) {
+                    ctx.fillStyle = '#ffeb3b';
+                    ctx.fill();
+                    ctx.strokeStyle = '#fbc02d';
+                } else {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#ff4444';
+                }
+                
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                if (this.completed) {
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('✓', this.x, this.y);
+                }
+            }
+
+            contains(mx, my) {
+                const dx = mx - this.x;
+                const dy = my - this.y;
+                return Math.sqrt(dx * dx + dy * dy) <= this.radius;
+            }
+
+            distance(mx, my) {
+                const dx = mx - this.x;
+                const dy = my - this.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+        }
+
+        function initGame() {
+            stitchPoints = [];
+            currentStitch = 0;
+            clickCount = 0;
+            totalAccuracy = 100;
+            
+            // Create a wound path (wavy line)
+            woundPath = [];
+            for (let x = 100; x < canvas.width - 100; x += 5) {
+                const y = canvas.height / 2 + Math.sin(x / 50) * 100;
+                woundPath.push({x, y});
+            }
+
+            // Create stitch points along the wound
+            for (let i = 0; i < woundPath.length; i += 40) {
+                stitchPoints.push(new StitchPoint(woundPath[i].x, woundPath[i].y));
+            }
+        }
+
+        function drawWound() {
+            // Draw the wound (red jagged line)
+            ctx.strokeStyle = '#ff4444';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            ctx.moveTo(woundPath[0].x, woundPath[0].y);
+            
+            for (let i = 1; i < woundPath.length; i++) {
+                ctx.lineTo(woundPath[i].x, woundPath[i].y);
+            }
+            ctx.stroke();
+
+            // Draw stitching thread for completed stitches
+            if (currentStitch > 0) {
+                ctx.strokeStyle = '#2196F3';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(stitchPoints[0].x, stitchPoints[0].y);
+                
+                for (let i = 1; i <= currentStitch && i < stitchPoints.length; i++) {
+                    ctx.lineTo(stitchPoints[i].x, stitchPoints[i].y);
+                }
+                ctx.stroke();
+            }
+        }
+
+        function drawBackground() {
+            ctx.fillStyle = '#fef5e7';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw skin texture
+            ctx.fillStyle = 'rgba(255, 220, 177, 0.3)';
+            for (let i = 0; i < 100; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                ctx.fillRect(x, y, 2, 2);
+            }
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            drawWound();
+            
+            stitchPoints.forEach(point => point.draw());
+
+            // Draw instruction
+            if (currentStitch < stitchPoints.length) {
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Click the yellow point! (${currentStitch + 1}/${stitchPoints.length})`, canvas.width / 2, 30);
+            }
+        }
+
+        canvas.addEventListener('click', (e) => {
+            if (!gameRunning) return;
+            if (currentStitch >= stitchPoints.length) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const currentPoint = stitchPoints[currentStitch];
+            const distance = currentPoint.distance(x, y);
+            
+            clickCount++;
+
+            if (currentPoint.contains(x, y)) {
+                // Successful stitch
+                currentPoint.completed = true;
+                
+                // Calculate accuracy based on distance from center
+                const accuracy = Math.max(0, 100 - (distance / currentPoint.radius) * 50);
+                const points = Math.floor(accuracy * 10);
+                score += points;
+                
+                // Update total accuracy
+                totalAccuracy = Math.floor((totalAccuracy * currentStitch + accuracy) / (currentStitch + 1));
+                document.getElementById('accuracy').textContent = totalAccuracy;
+                document.getElementById('accuracyBar').style.width = totalAccuracy + '%';
+                
+                currentStitch++;
+                playSound('success');
+                
+                // Check win condition
+                if (currentStitch >= stitchPoints.length) {
+                    endGame(true);
+                }
+            } else {
+                // Missed click - penalty
+                score -= 20;
+                totalAccuracy = Math.max(0, totalAccuracy - 5);
+                document.getElementById('accuracy').textContent = totalAccuracy;
+                document.getElementById('accuracyBar').style.width = totalAccuracy + '%';
+                playSound('error');
+            }
+            
+            document.getElementById('score').textContent = score;
+        });
+
+        function playSound(type) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            if (type === 'success') {
+                oscillator.frequency.value = 600;
+            } else {
+                oscillator.frequency.value = 150;
+            }
+            
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.2);
+        }
+
+        function updateTimer() {
+            if (!gameRunning) return;
+            
+            timeLeft--;
+            document.getElementById('timer').textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                endGame(false);
+            }
+        }
+
+        function endGame(won) {
+            gameRunning = false;
+            
+            const gameOverDiv = document.getElementById('gameOver');
+            const resultTitle = document.getElementById('resultTitle');
+            const finalScore = document.getElementById('finalScore');
+            const resultMessage = document.getElementById('resultMessage');
+            
+            if (won) {
+                resultTitle.textContent = '✅ Perfect Stitching!';
+                score += timeLeft * 5; // Time bonus
+                score += totalAccuracy * 10; // Accuracy bonus
+                resultMessage.textContent = `Accuracy: ${totalAccuracy}% | Time Bonus: ${timeLeft * 5} pts`;
+            } else {
+                resultTitle.textContent = '⏰ Time\'s Up!';
+                resultMessage.textContent = `Completed ${currentStitch}/${stitchPoints.length} stitches`;
+            }
+            
+            finalScore.textContent = score;
+            
+            const currentHighScore = localStorage.getItem('game2Score') || 0;
+            if (score > currentHighScore) {
+                localStorage.setItem('game2Score', score);
+            }
+            
+            gameOverDiv.style.display = 'flex';
+        }
+
+        function restartGame() {
+            score = 0;
+            timeLeft = 90;
+            gameRunning = true;
+            document.getElementById('score').textContent = score;
+            document.getElementById('timer').textContent = timeLeft;
+            document.getElementById('accuracy').textContent = 100;
+            document.getElementById('accuracyBar').style.width = '100%';
+            document.getElementById('gameOver').style.display = 'none';
+            initGame();
+        }
+
+        initGame();
+        setInterval(update, 1000 / 60);
+        setInterval(updateTimer, 1000);
+    </script>
+</body>
+</html>
